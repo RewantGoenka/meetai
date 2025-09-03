@@ -3,20 +3,15 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, VariantProps } from "class-variance-authority"
-import { PanelLeftIcon } from "lucide-react"
+import { PanelLeftIcon,  } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
+import { usePathname } from "next/navigation";
+import { Sheet} from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -24,6 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./sheet"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -63,7 +59,7 @@ function SidebarProvider({
   ...props
 }: React.ComponentProps<"div"> & {
   defaultOpen?: boolean
-  open?: boolean
+  open?: boolean 
   onOpenChange?: (open: boolean) => void
 }) {
   const isMobile = useIsMobile()
@@ -502,6 +498,7 @@ function SidebarMenuButton({
   size = "default",
   tooltip,
   className,
+  children, // ✅ accept children
   ...props
 }: React.ComponentProps<"button"> & {
   asChild?: boolean
@@ -511,6 +508,7 @@ function SidebarMenuButton({
   const Comp = asChild ? Slot : "button"
   const { isMobile, state } = useSidebar()
 
+  // Wrap children in a single element to avoid React.Children.only errors
   const button = (
     <Comp
       data-slot="sidebar-menu-button"
@@ -519,31 +517,36 @@ function SidebarMenuButton({
       data-active={isActive}
       className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
       {...props}
-    />
+    >
+      <span>{children}</span>
+    </Comp>
   )
 
   if (!tooltip) {
     return button
   }
 
-  if (typeof tooltip === "string") {
-    tooltip = {
-      children: tooltip,
-    }
-  }
+  const tooltipProps =
+    typeof tooltip === "string"
+      ? { children: tooltip }
+      : tooltip
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipTrigger asChild>
+        <span>{button}</span> {/* Wrap button in a single element */}
+      </TooltipTrigger>
       <TooltipContent
         side="right"
         align="center"
         hidden={state !== "collapsed" || isMobile}
-        {...tooltip}
+        {...tooltipProps}
       />
     </Tooltip>
   )
 }
+
+
 
 function SidebarMenuAction({
   className,
