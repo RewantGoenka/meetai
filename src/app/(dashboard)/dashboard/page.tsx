@@ -1,16 +1,22 @@
-"use client";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 
-export default function DashboardPage() {
-  const { data: session } = authClient.useSession();
+import {HomeView} from "@/modules/home/ui/views/home-view";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { caller } from "@/trpc/server";
 
-  if (!session) return null;
+const Page = async () => {
+  const data = await caller().hello({ text: "Rewant Server" });
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  if (!session) {
+    redirect("/sign-in");
+  }
+  return <p>{data.greeting}</p>;
+  return <HomeView />;
+};
 
-  return (
-    <div>
-      <h1>Welcome, {session.user.name}</h1>
-      <Button onClick={() => authClient.signOut()}>Logout</Button>
-    </div>
-  );
-}
+export default Page;
