@@ -1,14 +1,12 @@
-import type { Config } from "drizzle-kit";
+import "dotenv/config";
+import { defineConfig } from "drizzle-kit";
 
-export default {
-  schema: "./drizzle/schema.ts",
-  out: "./drizzle/migrations",
-  driver: "d1-http", // 👈 use 'pg' for studio
-  dialect: "sqlite",
+export default defineConfig({
+  schema: "./src/db/schema.ts",
+  out: "./drizzle",
+  dialect: "postgresql",
   dbCredentials: {
-    accountId: process.env.ACCOUNT_ID!,
-    databaseId: process.env.DATABASE_ID!,
-    token: process.env.DATABASE_TOKEN!,
+    url: process.env.DATABASE_URL as string,
   },
-} satisfies Config;
+});
 
