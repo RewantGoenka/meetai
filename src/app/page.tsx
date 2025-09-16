@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-
+import { redirect } from "next/navigation";
 export default function Home() {
   const router = useRouter();
 
@@ -76,9 +76,8 @@ export default function Home() {
   };
 
   // Logged in → dashboard redirect
-  if (session) {
-    router.push("/dashboard");
-    return null;
+   if (session) {
+    redirect("/dashboard");
   }
 
   // Logged out → signup + login
