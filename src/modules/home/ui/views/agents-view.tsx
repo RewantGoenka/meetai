@@ -1,6 +1,6 @@
 "use client";
 import { ErrorState } from "@/components/error-state";
-import {  dataTagErrorSymbol, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { LoadingState } from "@/components/loadingstate";
 
