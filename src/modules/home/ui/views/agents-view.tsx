@@ -4,24 +4,15 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { LoadingState } from "@/components/loadingstate";
 import { DataTable } from "@/modules/agents/ui/components/data-table";
-import { columns, Payment } from "@/modules/agents/ui/components/columns";
+import { columns} from "@/modules/agents/ui/components/columns";
 
-const mockData: Payment[] = [
-    {
-      id: "728ed52f",
-      amount: 100,
-      status: "pending",
-      email: "m@example.com",
-    },
-    // ...
-  ]
 export const AgentsView = () => {
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(trpc.agents.getMany.queryOptions());
 
   return (
-    <div>
-      <DataTable data={mockData}  columns={columns}/>
+    <div className="flex-1 pb-4 px-4 md:px-8 flex flex-col gap-y-4">
+      <DataTable data={data}  columns={columns}/>
     </div>
   );
 };
