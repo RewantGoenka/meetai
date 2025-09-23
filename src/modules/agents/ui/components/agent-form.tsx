@@ -17,8 +17,8 @@ import { agentsInsertSchema } from "@/modules/agents/schemas";
 import { toast } from "sonner";
 import { GeneratedAvatar } from "@/components/ui/generated-avatar";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/router";
-import { trpc } from "@/trpc/server";
+import { useRouter } from "next/navigation";
+import { useTRPC } from "@/trpc/client";
 
 type AgentFormValues = z.infer<typeof agentsInsertSchema>;
 
@@ -31,6 +31,7 @@ interface AgentFormProps {
 export const AgentForm = ({ onSuccess, onCancel, initialValues }: AgentFormProps) => {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const trpc = useTRPC();
 
   const createAgent = useMutation(
     trpc.agents.create.mutationOptions({
@@ -46,7 +47,7 @@ export const AgentForm = ({ onSuccess, onCancel, initialValues }: AgentFormProps
       },
     })
   );
-    const form = useForm<AgentFormValues>({
+  const form = useForm<z.infer<typeof agentsInsertSchema>>({
       resolver: zodResolver(agentsInsertSchema),
       defaultValues: {
         name: initialValues?.name ?? "",
