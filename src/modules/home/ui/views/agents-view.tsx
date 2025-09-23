@@ -3,14 +3,25 @@ import { ErrorState } from "@/components/error-state";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { LoadingState } from "@/components/loadingstate";
+import { DataTable } from "@/modules/agents/ui/components/data-table";
+import { columns, Payment } from "@/modules/agents/ui/components/columns";
 
+const mockData: Payment[] = [
+    {
+      id: "728ed52f",
+      amount: 100,
+      status: "pending",
+      email: "m@example.com",
+    },
+    // ...
+  ]
 export const AgentsView = () => {
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(trpc.agents.getMany.queryOptions());
 
   return (
     <div>
-      {JSON.stringify(data, null, 2)}
+      <DataTable data={mockData}  columns={columns}/>
     </div>
   );
 };

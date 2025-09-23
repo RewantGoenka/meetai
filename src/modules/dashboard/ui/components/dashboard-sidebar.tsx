@@ -7,7 +7,7 @@ import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
-import { DashBoardUserButton } from "./dashboard-user-button";
+import { DashboardUserButton } from "./dashboard-user-button";
 const firstsection = [
     { 
       icon: VideoIcon ,
@@ -90,8 +90,8 @@ export const DashboardSidebar = () => {
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter className="text-white">
-                <DashBoardUserButton />            
+            <SidebarFooter className="text-black">
+                <DashboardUserButton />            
                 </SidebarFooter>
         </Sidebar>
     )
