@@ -6,7 +6,7 @@ import { LoadingState } from "@/components/loadingstate";
 import { DataTable } from "@/modules/agents/ui/components/data-table";
 import { columns} from "@/modules/agents/ui/components/columns";
 import { useRouter } from "next/navigation";
-export const AgentsView = () => {
+export const MeetingsView = () => {
   const router = useRouter();
   const trpc = useTRPC();
   const { data } = useSuspenseQuery(trpc.agents.getMany.queryOptions());

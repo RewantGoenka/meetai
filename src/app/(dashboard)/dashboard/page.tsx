@@ -1,6 +1,3 @@
-import { authClient } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
-
 import {HomeView} from "@/modules/home/ui/views/home-view";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";

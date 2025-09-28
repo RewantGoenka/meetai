@@ -4,6 +4,7 @@ import {
   text,
   timestamp,
   boolean,
+  pgEnum
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -66,6 +67,14 @@ export const verification = pgTable("verification", {
   ),
 });
 
+export const meetingStatus = pgEnum("meeting_status",[
+  "processing",
+  "completed",
+  "canceled",
+  "upcoming",
+  "active",
+])
+
 export const agents = pgTable("agents", {
   id: text("id").primaryKey().$defaultFn(() => nanoid()),
   name: text("name").notNull(),
@@ -74,5 +83,24 @@ export const agents = pgTable("agents", {
     .references(() => user.id, { onDelete: "cascade" }),
   instructions: text("instructions").notNull(),
   createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const meetings = pgTable("meetings", {
+  id: text("id").primaryKey().$defaultFn(() => nanoid()),
+  name: text("name").notNull(),
+  userid: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  agentid: text("agent_id")
+    .notNull()
+    .references(() => agents.id, { onDelete: "cascade" }),
+  status: meetingStatus("status").notNull().default("upcoming"),
+  startedAt: timestamp("started_at"),
+  endedAt: timestamp("ended_at"),
+  transcripturl: text("transcript_url"),
+  recordingurl: text("recording_url"),
+  summary: text("summary"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
