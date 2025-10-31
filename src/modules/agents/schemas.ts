@@ -9,5 +9,3 @@ export const agentsUpdateSchema = agentsInsertSchema.extend({
   id: z.string().min(1, "ID is required"),
 });
 
-export type AgentsInsertInput = z.infer<typeof agentsInsertSchema>;
-export type AgentsUpdateInput = z.infer<typeof agentsUpdateSchema>;

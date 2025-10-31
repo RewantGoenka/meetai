@@ -21,7 +21,6 @@ import { useRouter } from "next/navigation";
 import { useTRPC } from "@/trpc/client";
 
 type AgentFormValues = z.infer<typeof agentsInsertSchema>;
-
 interface AgentFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
