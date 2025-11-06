@@ -23,7 +23,7 @@ interface DataTableProps<TData extends Record<string, any>, TValue> {
   initialPageSize?: number
 }
 
-// ✅ Utility: pre-format all Date fields in data
+// pre-format all Date fields in data
 function formatDates<T extends Record<string, any>>(data: T[]): T[] {
   return data.map(item => {
     const newItem: Record<string, any> = { ...item }
@@ -51,7 +51,7 @@ export function DataTable<TData extends Record<string, any>, TValue>({
   })
   const [globalFilter, setGlobalFilter] = useState("")
 
-  // Pre-format all dates in the data before passing to table
+  //Pre-format all dates in the data before passing to table
   const safeData = formatDates(data)
 
   const table = useReactTable({
