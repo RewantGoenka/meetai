@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 
-import * as schema from "drizzle/schema"; // import all your tables from introspect
+import * as schema from "@/db/schema" // import all your tables from introspect
 
 // Connect using Neon
 const sql = neon(process.env.DATABASE_URL!);
