@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { TRPCReactProvider } from "@/trpc/client";
 import { Toaster } from "@/components/ui/sonner";
+
 const inter = Inter({
   subsets: ["latin"],
 });
@@ -14,19 +15,19 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <TRPCReactProvider>
-      <html lang="en">
+      <html lang="en" className="h-full">
         <body
-          className={`${inter.className} antialiased`}
+          className={`${inter.className} antialiased h-full`}
         >
           <Toaster />
           {children}
-      </body>
-    </html>
+        </body>
+      </html>
     </TRPCReactProvider>
   );
 }
