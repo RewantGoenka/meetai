@@ -8,6 +8,7 @@ import { MeetingIdViewHeader } from '../components/meeting-id-view-header';
 import { useRouter } from 'next/navigation';
 import { UpcomingState } from '../components/upcoming-state';
 import { ActiveState } from '../components/active-state';
+import { CompletedState } from '@/components/completed-state';
 
 interface Props {
     meetingId: string;
@@ -53,7 +54,7 @@ export const MeetingIdView = ({ meetingId }: Props) => {
                     
                 />
                 {isCancelled && <div>Cancelled</div>}
-                {isCompleted && <div>Completed</div>}
+                {isCompleted && <div><CompletedState data={data} /></div>}
                 {isProcessing && <div>Processing</div>}
                 {isActive && <ActiveState meetingId={meetingId} />}
                 {isUpcoming && <UpcomingState

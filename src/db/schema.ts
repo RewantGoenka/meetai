@@ -7,7 +7,7 @@ import {
   pgEnum
 } from "drizzle-orm/pg-core";
 
-export const user = pgTable("user", {
+export const user = pgTable("users", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
@@ -100,10 +100,18 @@ export const meetings = pgTable("meetings", {
   endedAt: timestamp("ended_at"),
   transcripturl: text("transcript_url"),
   recordingurl: text("recording_url"),
+  transcriptProcessed: boolean("transcript_processed").default(false),
   summary: text("summary"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+export const webhookEvents = pgTable("webhook_events", {
+  id: text("id").primaryKey(),          // Stream payload.id
+  type: text("type").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 
 
 

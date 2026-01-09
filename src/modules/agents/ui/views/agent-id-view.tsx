@@ -19,7 +19,7 @@ interface Props {
 export const AgentIdView = ({ agentId }: Props) => {
     const trpc = useTRPC();
     const router = useRouter();
-    const queryCient=useQueryClient();
+    const queryClient = useQueryClient();
     const { data } = useSuspenseQuery(
         trpc.agents.getOne.queryOptions({ 
             // The input for the query is 'id', so you should pass the 'agentId' prop to it.
@@ -29,7 +29,7 @@ export const AgentIdView = ({ agentId }: Props) => {
     const removeAgent = useMutation(
       trpc.agents.remove.mutationOptions({
         onSuccess: () => {
-          queryCient.invalidateQueries(trpc.agents.getMany.queryOptions({}));
+          queryClient.invalidateQueries(trpc.agents.getMany.queryOptions());
           router.push("/agents");
         },
         onError: (error) => {
