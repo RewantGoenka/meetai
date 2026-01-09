@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { TRPCReactProvider } from "@/trpc/client";
 import { Toaster } from "@/components/ui/sonner";
+import {StrictMode} from "react";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,6 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
+    <StrictMode>
     <TRPCReactProvider>
       <html lang="en" className="h-full">
         <body
@@ -29,5 +31,6 @@ export default function RootLayout({
         </body>
       </html>
     </TRPCReactProvider>
+    </StrictMode>
   );
 }

@@ -1,7 +1,7 @@
 import {ReactNode,useState} from "react";
 import { CommandDialog, CommandInput, CommandEmpty, CommandList,CommandItem } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
+import { ChevronsUpDownIcon } from "lucide-react";
 import { Button} from "./ui/button";
 
 interface Props {

@@ -12,7 +12,7 @@ export const NewAgentDialog = ({ open, onOpenChange }: NewAgentDialogProps) => {
        title="New Agent"
        description="Create a new agent to assist you with various tasks."
        open={open}
-       onOpenChange={onOpenChange}
+       onOpenChangeAction={onOpenChange}
     >
       <AgentForm
         onSuccess={()=>onOpenChange(false)}
