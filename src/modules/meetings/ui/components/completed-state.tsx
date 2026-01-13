@@ -4,9 +4,9 @@ import { meetingsGetOne } from "@/modules/meetings/types";
 import { BookOpenTextIcon, FileTextIcon, FileVideoIcon, SparklesIcon,ClockFadingIcon } from "lucide-react";
 import { ScrollArea,ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GeneratedAvatar } from "./ui/generated-avatar";
+import { GeneratedAvatar } from "../../../../components/ui/generated-avatar";
 import { format } from "date-fns";
-import { Badge } from "./ui/badge";
+import { Badge } from "../../../../components/ui/badge";
 import { formatDuration } from "@/lib/utils";
 
 interface Props {

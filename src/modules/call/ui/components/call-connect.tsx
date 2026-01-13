@@ -3,7 +3,6 @@
 import { LoaderIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { CallUI } from "./call-ui";
 import {
   Call,
   CallingState,
@@ -11,6 +10,8 @@ import {
   StreamVideo,
   StreamVideoClient,
 } from "@stream-io/video-react-sdk";
+
+import { CallUI } from "./call-ui";
 import { useTRPC } from "@/trpc/client";
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 
@@ -38,15 +39,10 @@ export const CallConnect = ({
   const [call, setCall] = useState<Call | null>(null);
   const joinedRef = useRef(false);
 
-  // 1️⃣ Create Stream client
   useEffect(() => {
     const _client = new StreamVideoClient({
       apiKey: process.env.NEXT_PUBLIC_STREAM_VIDEO_API_KEY!,
-      user: {
-        id: userId,
-        name: userName,
-        image: userImage,
-      },
+      user: { id: userId, name: userName, image: userImage },
       tokenProvider: generateToken,
     });
 
@@ -58,7 +54,6 @@ export const CallConnect = ({
     };
   }, [userId, userName, userImage, generateToken]);
 
-  // 2️⃣ Create call
   useEffect(() => {
     if (!client) return;
 
@@ -66,23 +61,16 @@ export const CallConnect = ({
     setCall(_call);
 
     return () => {
-      if (_call.state.callingState !== CallingState.LEFT) {
-        _call.leave().catch(() => {});
-      }
+      _call.leave().catch(() => {});
       setCall(null);
     };
   }, [client, meetingId]);
 
-  // 3️⃣ JOIN CALL (CRITICAL FIX)
   useEffect(() => {
     if (!call || joinedRef.current) return;
-
     joinedRef.current = true;
-    call.join({ create: true }).catch(console.error);
 
-    return () => {
-      joinedRef.current = false;
-    };
+    call.join({ create: true }).catch(console.error);
   }, [call]);
 
   if (!client || !call) {
