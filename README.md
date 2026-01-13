@@ -1,5 +1,3 @@
-Absolutely! Here’s the **full `README.md` in one file**, ready to copy-paste:
-
 ````markdown
 # MeetAI
 
