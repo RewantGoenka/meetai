@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Absolutely! Here’s the **full `README.md` in one file**, ready to copy-paste:
+
+````markdown
+# MeetAI
+
+**Build Voice-AI Agents and run Meetings powered by them — faster than ever.**
+
+MeetAI is an AI-powered meeting platform designed to handle **real-time conversations, event-driven workflows, and production-grade reliability**. This project demonstrates full-stack engineering at scale, with a focus on **system design, idempotency, and data integrity**.
+
+---
+
+## Features
+
+- Create AI-powered meeting agents
+- Conduct and manage meetings with real-time AI support
+- Event-driven workflows with idempotent and duplicate-safe webhooks
+- Custom data-table architecture to handle complex meeting and agent states
+- Reliable serverless deployment on Vercel
+
+---
+
+## Tech Stack
+
+- **Frontend / API:** Next.js (App Router) + TypeScript  
+- **API Layer:** tRPC (end-to-end type safety)  
+- **Database:** PostgreSQL + Drizzle ORM  
+- **Event Workflows:** Inngest  
+- **AI Integration:** OpenAI API  
+- **Local Development / Webhooks:** ngrok  
+- **Deployment:** Vercel (serverless)
+
+---
+
+## Engineering Highlights
+
+- **Custom data-table architecture** instead of plug-and-play ORM defaults  
+- **Idempotent event and webhook handling** to safely support retries  
+- **Duplicate webhook prevention** to maintain consistency  
+- **Race-condition handling** across async workflows  
+
+---
 
 ## Getting Started
 
-First, run the development server:
+1. Clone the repository  
+```bash
+git clone <repo-url>
+cd meetai
+````
+
+2. Install dependencies
+
+```bash
+npm install
+```
+
+3. Set environment variables (`.env`)
+
+```env
+OPENAI_API_KEY=<your-key>
+INNGEST_API_KEY=<your-key>
+DATABASE_URL=<your-postgres-url>
+```
+
+4. Run local development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Use **ngrok** for testing webhooks locally:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+ngrok http 3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+6. Deploy on **Vercel** for production
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Live Demo
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+[https://meetai-zeta-ashen.vercel.app/sign-in](https://meetai-zeta-ashen.vercel.app/sign-in)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Why MeetAI?
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+I built **MeetAI** because I wanted to go beyond simple “AI demos” and build something that actually **works reliably in the real world**.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Most AI meeting or agent demos stop at “it runs.” They don’t account for **failure modes, retries, or inconsistent data**. I wanted to:
+
+* Learn **production-grade system design** in a serverless environment
+* Understand **idempotency, duplicate event handling, and race conditions**
+* Integrate **real-time AI workflows** in a way that’s maintainable and scalable
+* Build a project that **shows I can design systems, not just write features**
+
+The project forced me to think like **an engineer building infra that won’t break**, and not just a developer shipping CRUD. Every challenge — from webhook retries to serverless cold starts — taught me more about **reliability, data integrity, and scaling AI-driven products**.
+
+MeetAI is a reflection of **months of iterative thinking, debugging, and designing for edge cases** — the kind of problems I want to solve professionally.
+
+---
+
+## License
+
+MIT License
+
+```
+git clone <repo-url>
+cd meetai
