@@ -1,0 +1,51 @@
+name: MeetAI CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # 3️⃣ Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4️⃣ Run backend tests
+      - name: Run tests
+        run: npm run test
+
+      # 5️⃣ Lint code
+      - name: Lint code
+        run: npm run lint
+
+      # 6️⃣ Build Next.js app
+      - name: Build app
+        run: npm run build
+
+      # 7️⃣ Deploy to Vercel
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ 2iZdUM6hapiphK5KgilXlhC1 }}
+          vercel-org-id: ${{ GsxoHNJX1hWelHL9re092TC9 }} # Your User ID for personal account
+          vercel-project-id: ${{ prj_G01INgE0rks4QClWfJPBqLYOTrd4 }}
+          working-directory: ./
+          prod: true
+
