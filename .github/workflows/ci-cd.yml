@@ -30,6 +30,9 @@ jobs:
       # 6️⃣ Build Next.js app
       - name: Build app
         run: npm run build
+        env:
+          NEXT_PUBLIC_STREAM_API_KEY: ${{ secrets.NEXT_PUBLIC_STREAM_API_KEY }}
+          STREAM_SECRET: ${{ secrets.STREAM_SECRET }}
 
       # 7️⃣ Deploy to Vercel
       - name: Deploy to Vercel
