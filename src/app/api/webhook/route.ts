@@ -1,9 +1,9 @@
+export const dynamic = 'force-dynamic';
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { agents, meetings, webhookEvents } from "@/db/schema";
 import { streamVideo } from "@/lib/stream-video";
-
 
 export async function POST(req: NextRequest) {
   const signature = req.headers.get("x-signature");
