@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { streamVideo } from "@/lib/stream-video";
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   const { callId } = await req.json();
