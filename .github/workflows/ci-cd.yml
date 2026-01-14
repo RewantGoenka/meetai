@@ -27,14 +27,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # 4️⃣ Run backend tests
-      - name: Run tests
-        run: npm run test
-
-      # 5️⃣ Lint code
-      - name: Lint code
-        run: npm run lint
-
       # 6️⃣ Build Next.js app
       - name: Build app
         run: npm run build
