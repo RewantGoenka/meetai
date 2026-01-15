@@ -1,86 +1,80 @@
+// page.tsx
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { redirect } from "next/navigation";
+
 export default function Home() {
   const router = useRouter();
-
-  // Signup state
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
-
-  // Login state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-
-  // Session
   const { data: session, isPending } = authClient.useSession();
-
-  // Loading state
   const [loading, setLoading] = useState(false);
 
-  // Show loading only while fetching session
-  if (isPending) {
-    return <p>Loading...</p>;
-  }
+  // ✅ Redirect if logged in
+  useEffect(() => {
+    if (session) {
+      router.push("/dashboard");
+    }
+  }, [session, router]);
 
-  // Handlers
+  if (isPending) return <p>Loading...</p>;
+
   const handleSignup = async () => {
-    setLoading(true);
-    const { error } = await authClient.signUp.email(
-      {
-        email: signupEmail,
-        name: signupEmail,
-        password: signupPassword,
-        callbackURL: "/dashboard", // ✅ redirect after signup
-      },
-      {
-        onSuccess: () => {
-          setLoading(false);
-          router.push("/dashboard");
+    try {
+      setLoading(true);
+      await authClient.signUp.email(
+        {
+          email: signupEmail,
+          name: signupEmail,
+          password: signupPassword,
+          callbackURL: "/dashboard",
         },
-        onError: ({ error }) => {
-          setLoading(false);
-          alert(error.message);
-        },
-      }
-    );
-    setLoading(false);
-    if (error) alert(error.message);
+        {
+          onSuccess: () => {
+            setLoading(false);
+            router.push("/dashboard");
+          },
+          onError: ({ error }) => {
+            setLoading(false);
+            alert(error.message);
+          },
+        }
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogin = async () => {
-    setLoading(true);
-    const { error } = await authClient.signIn.email(
-      {
-        email: loginEmail,
-        password: loginPassword,
-        callbackURL: "/dashboard", // ✅ redirect after login
-      },
-      {
-        onSuccess: () => {
-          setLoading(false);
-          router.push("/dashboard");
+    try {
+      setLoading(true);
+      await authClient.signIn.email(
+        {
+          email: loginEmail,
+          password: loginPassword,
+          callbackURL: "/dashboard",
         },
-        onError: ({ error }) => {
-          setLoading(false);
-          alert(error.message);
-        },
-      }
-    );
-    setLoading(false);
-    if (error) alert(error.message);
+        {
+          onSuccess: () => {
+            setLoading(false);
+            router.push("/dashboard");
+          },
+          onError: ({ error }) => {
+            setLoading(false);
+            alert(error.message);
+          },
+        }
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Logged in → dashboard redirect
-   if (session) {
-    redirect("/dashboard");
-  }
-
-  // Logged out → signup + login
   return (
     <div className="min-h-screen flex items-center justify-center">
       <Card className="p-6 shadow-lg w-[360px]">
