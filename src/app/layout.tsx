@@ -4,6 +4,8 @@ import "./globals.css";
 import { TRPCReactProvider } from "@/trpc/client";
 import { Toaster } from "@/components/ui/sonner";
 import {StrictMode} from "react";
+import { Analytics } from "@vercel/analytics/next"
+import speed from "@vercel/speed-insights"
 
 const inter = Inter({
   subsets: ["latin"],
