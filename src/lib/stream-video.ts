@@ -1,6 +1,6 @@
 import { StreamClient } from '@stream-io/node-sdk';
 
-export const getStreamClient = () => {
+export const streamVideo = () => {
   const apiKey = process.env.NEXT_PUBLIC_STREAM_VIDEO_API_KEY;
   const apiSecret = process.env.STREAM_VIDEO_API_SECRET;
 
