@@ -9,22 +9,34 @@ export async function POST(req: NextRequest) {
   const signature = req.headers.get("x-signature");
   const body = await req.text();
   
-  // 1. Initialize the client by calling the function
+  // 1. Initialize client correctly
   const client = streamVideo(); 
 
-  // 2. Use the instance 'client' instead of the function name
+  // 2. Robust verification
   const isDev = process.env.NODE_ENV === "development";
-  const isValid = isDev || (signature && client.verifyWebhook(body, signature));
+  const isValid = isDev || (signature && client.verifyWebhook(body, signature!));
 
   if (!isValid) {
+    console.error("❌ Webhook Unauthorized: Check STREAM_API_SECRET");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   let payload: any;
-  try { payload = JSON.parse(body); } catch { return NextResponse.json({ error: "Bad JSON" }, { status: 400 }); }
+  try { 
+    payload = JSON.parse(body); 
+  } catch { 
+    return NextResponse.json({ error: "Bad JSON" }, { status: 400 }); 
+  }
 
   const { type: eventType, id: eventId } = payload;
-  const meetingId = payload.call?.custom?.meetingId || payload.call_cid?.split(":")[1];
+  
+  // 3. Bulletproof Meeting ID extraction
+  const rawId = payload.call?.id || payload.call_cid || payload.call?.custom?.meetingId;
+  const meetingId = rawId?.includes(':') ? rawId.split(':')[1] : rawId;
+
+  if (!meetingId) {
+    return NextResponse.json({ error: "No meetingId" }, { status: 400 });
+  }
 
   /* 1. IDEMPOTENCY LOCK */
   if (eventId) {
@@ -35,21 +47,27 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  /* 2. CALL STARTED */
-  if (eventType === "call.session_started" && meetingId) {
+  /* 2. CALL STARTED - AGENT JOIN */
+  if (eventType === "call.session_started") {
+    // Select first to ensure it exists, then update
     const [meeting] = await db
-      .update(meetings)
-      .set({ status: "active", startedAt: new Date() })
-      .where(eq(meetings.id, meetingId))
-      .returning();
+      .select()
+      .from(meetings)
+      .where(eq(meetings.id, meetingId));
 
-    if (!meeting) return NextResponse.json({ status: "ok" });
+    if (!meeting) {
+      console.error(`❌ Meeting ${meetingId} not found in DB`);
+      return NextResponse.json({ status: "ok" });
+    }
+
+    // Mark as active
+    await db.update(meetings).set({ status: "active", startedAt: new Date() }).where(eq(meetings.id, meetingId));
 
     const [agent] = await db.select().from(agents).where(eq(agents.id, meeting.agentid));
 
     if (agent?.instructions) {
       try {
-        // Use client.video here
+        console.log(`🤖 Agent joining meeting: ${meetingId}`);
         const call = client.video.call("default", meetingId);
 
         const realtimeClient = await client.video.connectOpenAi({
@@ -65,13 +83,13 @@ export async function POST(req: NextRequest) {
           voice: "alloy", 
         });
       } catch (error) {
-        console.error("❌ OpenAI Connection Error:", error);
+        console.error("❌ OpenAI/Stream Agent Error:", error);
       }
     }
   }
 
   /* 3. PARTICIPANT LEFT */
-  else if (eventType === "call.session_participant_left" && meetingId) {
+  else if (eventType === "call.session_participant_left") {
     const leftUserId = payload.participant?.user_id;
     const [meeting] = await db.select().from(meetings).where(eq(meetings.id, meetingId));
 
@@ -85,10 +103,11 @@ export async function POST(req: NextRequest) {
   }
 
   /* 4. TRANSCRIPTION READY */
-  else if (eventType === "call.transcription_ready" && meetingId) {
+  else if (eventType === "call.transcription_ready") {
     const transcriptionUrl = payload.transcription?.url;
     if (transcriptionUrl) {
       await db.update(meetings).set({ transcripturl: transcriptionUrl }).where(eq(meetings.id, meetingId));
+      
       const { inngest } = await import("@/inngest/client");
       await inngest.send({
         name: "meeting/transcript.ready",
