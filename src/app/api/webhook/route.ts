@@ -3,13 +3,20 @@ import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { agents, meetings, webhookEvents } from "@/db/schema";
-import { streamVideo } from "@/lib/stream-video";
+import { streamVideo } from "@/lib/stream-video"; 
 
 export async function POST(req: NextRequest) {
   const signature = req.headers.get("x-signature");
   const body = await req.text();
+  
+  // 1. Initialize the client by calling the function
+  const client = streamVideo(); 
 
-  if (!signature || (process.env.NODE_ENV !== "development" && !streamVideo().verifyWebhook(body, signature))) {
+  // 2. Use the instance 'client' instead of the function name
+  const isDev = process.env.NODE_ENV === "development";
+  const isValid = isDev || (signature && client.verifyWebhook(body, signature));
+
+  if (!isValid) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -19,37 +26,33 @@ export async function POST(req: NextRequest) {
   const { type: eventType, id: eventId } = payload;
   const meetingId = payload.call?.custom?.meetingId || payload.call_cid?.split(":")[1];
 
-  /* 1. STRICT IDEMPOTENCY LOCK */
+  /* 1. IDEMPOTENCY LOCK */
   if (eventId) {
     try {
       await db.insert(webhookEvents).values({ id: eventId, type: eventType });
     } catch (e) {
-      console.log(`♻️ Blocking duplicate event: ${eventId}`);
       return NextResponse.json({ status: "duplicate" });
     }
   }
 
-  /* 2. CALL STARTED - SINGLE AGENT JOIN */
+  /* 2. CALL STARTED */
   if (eventType === "call.session_started" && meetingId) {
     const [meeting] = await db
       .update(meetings)
       .set({ status: "active", startedAt: new Date() })
-      .where(eq(meetings.status, "upcoming")) 
+      .where(eq(meetings.id, meetingId))
       .returning();
 
-    if (!meeting) {
-      console.log("🚫 Agent already joined or meeting active. Skipping join.");
-      return NextResponse.json({ status: "ok" });
-    }
+    if (!meeting) return NextResponse.json({ status: "ok" });
 
     const [agent] = await db.select().from(agents).where(eq(agents.id, meeting.agentid));
 
     if (agent?.instructions) {
       try {
-        console.log(`🤖 Agent ${agent.id} joining call ${meetingId}`);
-        const call = streamVideo().video.call("default", meetingId);
+        // Use client.video here
+        const call = client.video.call("default", meetingId);
 
-        const realtimeClient = await streamVideo().video.connectOpenAi({
+        const realtimeClient = await client.video.connectOpenAi({
           call,
           openAiApiKey: process.env.OPENAI_API_KEY!,
           agentUserId: agent.id,
@@ -57,12 +60,7 @@ export async function POST(req: NextRequest) {
 
         await realtimeClient.updateSession({
           instructions: agent.instructions,
-          turn_detection: { 
-            type: "server_vad",
-            threshold: 0.5, 
-            prefix_padding_ms: 300,
-            silence_duration_ms: 500 
-          },
+          turn_detection: { type: "server_vad", threshold: 0.5 },
           input_audio_transcription: { model: "whisper-1" },
           voice: "alloy", 
         });
@@ -77,40 +75,20 @@ export async function POST(req: NextRequest) {
     const leftUserId = payload.participant?.user_id;
     const [meeting] = await db.select().from(meetings).where(eq(meetings.id, meetingId));
 
-    // Only end if the Human (non-agent) leaves
     if (meeting && leftUserId !== meeting.agentid && meeting.status === "active") {
       try {
-        const call = streamVideo().video.call("default", meetingId);
+        const call = client.video.call("default", meetingId);
         await call.end();
       } catch (e) {}
-
       await db.update(meetings).set({ status: "processing", endedAt: new Date() }).where(eq(meetings.id, meetingId));
     }
   }
 
-  /* 4. RECORDING READY */
-  else if (eventType === "call.recording_ready" && meetingId) {
-    const transcriptUrl = payload.recording?.url;
-    const recordingUrl = payload.recording?.url; 
-
-    if (transcriptUrl) {
-      await db.update(meetings).set({
-        transcripturl: transcriptUrl,
-        recordingurl: recordingUrl,
-        updatedAt: new Date()
-      }).where(eq(meetings.id, meetingId));
-    }
-  }
-
-  /* 5. TRANSCRIPTION READY */
+  /* 4. TRANSCRIPTION READY */
   else if (eventType === "call.transcription_ready" && meetingId) {
     const transcriptionUrl = payload.transcription?.url;
     if (transcriptionUrl) {
-      await db.update(meetings).set({
-        transcripturl: transcriptionUrl,
-        updatedAt: new Date()
-      }).where(eq(meetings.id, meetingId));
-
+      await db.update(meetings).set({ transcripturl: transcriptionUrl }).where(eq(meetings.id, meetingId));
       const { inngest } = await import("@/inngest/client");
       await inngest.send({
         name: "meeting/transcript.ready",
