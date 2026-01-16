@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { TRPCReactProvider } from "@/trpc/client";
 import { Toaster } from "@/components/ui/sonner";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import {StrictMode} from "react";
 
 const inter = Inter({
@@ -28,6 +29,7 @@ export default function RootLayout({
         >
           <Toaster />
           {children}
+          <SpeedInsights />
         </body>
       </html>
     </TRPCReactProvider>
