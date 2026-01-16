@@ -80,19 +80,74 @@ export async function POST(req: NextRequest) {
   else if (eventType === "call.session_participant_left" && meetingId) {
     const leftUserId = payload.participant?.user_id;
     const [meeting] = await db.select().from(meetings).where(eq(meetings.id, meetingId));
-    
+
+// #region agent log
+fetch('http://127.0.0.1:7242/ingest/c3092b27-fc29-41c9-b15a-999d261e8bb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/app/api/webhook/route.ts:80',message:'participant_left event received',data:{eventType,meetingId,leftUserId,meetingStatus:meeting?.status},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+// #endregion
+
     // Only end if the Human (non-agent) leaves
     if (meeting && leftUserId !== meeting.agentid && meeting.status === "active") {
+// #region agent log
+fetch('http://127.0.0.1:7242/ingest/c3092b27-fc29-41c9-b15a-999d261e8bb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/app/api/webhook/route.ts:88',message:'transitioning to processing state',data:{meetingId,leftUserId},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+// #endregion
       try {
         const call = streamVideo.video.call("default", meetingId);
         await call.end();
       } catch (e) {}
-      
+
       await db.update(meetings).set({ status: "processing", endedAt: new Date() }).where(eq(meetings.id, meetingId));
     }
   }
 
-  // ... (Keep your Transcription and Recording ready blocks as they were)
+  /* 4. TRANSCRIPT READY */
+  else if (eventType === "call.recording_ready" && meetingId) {
+// #region agent log
+fetch('http://127.0.0.1:7242/ingest/c3092b27-fc29-41c9-b15a-999d261e8bb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/app/api/webhook/route.ts:97',message:'recording_ready event received',data:{eventType,meetingId,payloadData:payload},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+// #endregion
+
+    const transcriptUrl = payload.recording?.url;
+    const recordingUrl = payload.recording?.url; // Assuming same URL for both
+
+    if (transcriptUrl) {
+// #region agent log
+fetch('http://127.0.0.1:7242/ingest/c3092b27-fc29-41c9-b15a-999d261e8bb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/app/api/webhook/route.ts:103',message:'storing transcript and recording URLs',data:{meetingId,transcriptUrl,recordingUrl},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+// #endregion
+      await db.update(meetings).set({
+        transcripturl: transcriptUrl,
+        recordingurl: recordingUrl,
+        updatedAt: new Date()
+      }).where(eq(meetings.id, meetingId));
+    }
+  }
+
+  /* 5. TRANSCRIPTION READY */
+  else if (eventType === "call.transcription_ready" && meetingId) {
+// #region agent log
+fetch('http://127.0.0.1:7242/ingest/c3092b27-fc29-41c9-b15a-999d261e8bb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/app/api/webhook/route.ts:113',message:'transcription_ready event received',data:{eventType,meetingId,payloadData:payload},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+// #endregion
+
+    const transcriptionUrl = payload.transcription?.url;
+    if (transcriptionUrl) {
+// #region agent log
+fetch('http://127.0.0.1:7242/ingest/c3092b27-fc29-41c9-b15a-999d261e8bb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/app/api/webhook/route.ts:118',message:'storing transcription URL and triggering Inngest',data:{meetingId,transcriptionUrl},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+// #endregion
+      await db.update(meetings).set({
+        transcripturl: transcriptionUrl,
+        updatedAt: new Date()
+      }).where(eq(meetings.id, meetingId));
+
+      // Trigger Inngest function
+// #region agent log
+fetch('http://127.0.0.1:7242/ingest/c3092b27-fc29-41c9-b15a-999d261e8bb3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/app/api/webhook/route.ts:126',message:'about to send Inngest event',data:{meetingId,transcriptionUrl},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+// #endregion
+      // Import inngest client
+      const { inngest } = await import("@/inngest/client");
+      await inngest.send({
+        name: "meeting/transcript.ready",
+        data: { meetingId, transcriptUrl: transcriptionUrl }
+      });
+    }
+  }
 
   return NextResponse.json({ status: "ok" });
 }
