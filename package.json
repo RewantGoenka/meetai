@@ -80,6 +80,7 @@
     "react-markdown": "^10.1.0",
     "react-resizable-panels": "^3.0.4",
     "recharts": "^2.15.4",
+    "sarvamai": "^1.1.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "vaul": "^1.1.2",

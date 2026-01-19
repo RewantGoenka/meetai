@@ -2,6 +2,7 @@ import { inngest } from "./client";
 import { db } from "@/db";
 import { meetings } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { summarizeWithSarvam } from "@/lib/sarvam";
 
 const MAX_TRANSCRIPT_CHARS = 15_000;
 
@@ -27,7 +28,6 @@ export const processMeetingTranscript = inngest.createFunction(
         throw new Error(`Meeting ${meetingId} not found`);
       }
 
-      // 🛡️ Idempotency: already processed
       if (row.transcriptProcessed || row.status === "completed") {
         return null;
       }
@@ -66,42 +66,48 @@ export const processMeetingTranscript = inngest.createFunction(
     const safeTranscript = transcriptText.slice(0, MAX_TRANSCRIPT_CHARS);
 
     /* ─────────────────────────────────────────────
-       3. AI SUMMARIZATION (GUARDED)
+       3. AI SUMMARIZATION (SARVAM → OPENAI FALLBACK)
     ────────────────────────────────────────────── */
     const summary = await step.run("ai-summarization", async () => {
-      const response = await fetch(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: [
-              {
-                role: "system",
-                content:
-                  "Analyze the transcript. 1) List speakers. 2) Provide a concise 3-sentence summary.",
-              },
-              { role: "user", content: safeTranscript },
-            ],
-          }),
+      try {
+        return await summarizeWithSarvam(safeTranscript);
+      } catch (sarvamError) {
+        console.warn("Sarvam failed, falling back to OpenAI", sarvamError);
+
+        const response = await fetch(
+          "https://api.openai.com/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "gpt-4o-mini",
+              messages: [
+                {
+                  role: "system",
+                  content:
+                    "Analyze the transcript. 1) List speakers. 2) Provide a concise 3-sentence summary.",
+                },
+                { role: "user", content: safeTranscript },
+              ],
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`OpenAI error ${response.status}`);
         }
-      );
 
-      if (!response.ok) {
-        throw new Error(`OpenAI error ${response.status}`);
+        const data = await response.json();
+
+        if (!data.choices?.[0]?.message?.content) {
+          throw new Error("Invalid OpenAI response");
+        }
+
+        return data.choices[0].message.content;
       }
-
-      const data = await response.json();
-
-      if (!data.choices?.[0]?.message?.content) {
-        throw new Error("Invalid OpenAI response");
-      }
-
-      return data.choices[0].message.content;
     });
 
     /* ─────────────────────────────────────────────
