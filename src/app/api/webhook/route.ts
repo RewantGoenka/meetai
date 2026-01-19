@@ -1,9 +1,8 @@
 export const dynamic = "force-dynamic";
-
 import { eq, and } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { agents, meetings, webhookEvents } from "@/db/schema";
+import { meetings, webhookEvents } from "@/db/schema";
 import { streamVideo } from "@/lib/stream-video";
 
 export async function POST(req: NextRequest) {
@@ -12,7 +11,8 @@ export async function POST(req: NextRequest) {
   const client = streamVideo();
 
   const isDev = process.env.NODE_ENV === "development";
-  const isValid = isDev || (signature && client.verifyWebhook(body, signature));
+  const isValid =
+    isDev || (signature && client.verifyWebhook(body, signature));
 
   if (!isValid) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   /* ─────────────────────────────────────────────
-     1. GLOBAL IDEMPOTENCY
+     1. GLOBAL IDEMPOTENCY (event-level)
   ────────────────────────────────────────────── */
   if (eventId) {
     try {
@@ -53,7 +53,8 @@ export async function POST(req: NextRequest) {
   }
 
   /* ─────────────────────────────────────────────
-     2. CALL SESSION STARTED → AGENT JOIN
+     2. CALL STARTED → MARK ACTIVE ONLY
+     (NO agent join here)
   ────────────────────────────────────────────── */
   if (eventType === "call.session_started") {
     const [meeting] = await db
@@ -73,34 +74,10 @@ export async function POST(req: NextRequest) {
     if (!meeting) {
       return NextResponse.json({ status: "already_active" });
     }
-
-    const [agent] = await db
-      .select()
-      .from(agents)
-      .where(eq(agents.id, meeting.agentid));
-
-    if (agent?.instructions) {
-      try {
-        const call = client.video.call("default", meetingId);
-
-        const realtimeClient = await client.video.connectOpenAi({
-          call,
-          openAiApiKey: process.env.OPENAI_API_KEY!,
-          agentUserId: agent.id,
-        });
-
-        await realtimeClient.updateSession({
-          instructions: agent.instructions,
-        });
-      } catch (err) {
-        console.error("❌ Agent join failed", err);
-      }
-    }
   }
 
   /* ─────────────────────────────────────────────
-     3. PARTICIPANT LEFT → MARK PROCESSING
-     (NO force-ending the call)
+     3. PARTICIPANT LEFT → PROCESSING
   ────────────────────────────────────────────── */
   else if (eventType === "call.session_participant_left") {
     await db
@@ -118,7 +95,7 @@ export async function POST(req: NextRequest) {
   }
 
   /* ─────────────────────────────────────────────
-     4. TRANSCRIPTION READY → INGEST EVENT
+     4. TRANSCRIPTION READY → INGEST
   ────────────────────────────────────────────── */
   else if (eventType === "call.transcription_ready") {
     const transcriptionUrl = payload.transcription?.url;
