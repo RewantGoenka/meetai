@@ -94,7 +94,6 @@ export async function POST(req: NextRequest) {
     if (meeting && leftUserId !== meeting.agentid) {
       try {
         const call = client.video.call("default", meetingId);
-        await call.end();
       } catch (e) {}
     }
   }
