@@ -37,8 +37,6 @@ async function testRealtime() {
 
   // 3️⃣ Update session (THIS is what you debugged earlier)
   await realtimeClient.updateSession({
-    instructions:
-      "You are a calm, helpful AI assistant. Greet the user politely.",
     turn_detection: {
       type: "server_vad",
     },
