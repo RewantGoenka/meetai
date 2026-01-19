@@ -91,9 +91,6 @@ export async function POST(req: NextRequest) {
 
         await realtimeClient.updateSession({
           instructions: agent.instructions,
-          turn_detection: { type: "server_vad", threshold: 0.5 },
-          input_audio_transcription: { model: "whisper-1" },
-          voice: "alloy",
         });
       } catch (err) {
         console.error("❌ Agent join failed", err);
