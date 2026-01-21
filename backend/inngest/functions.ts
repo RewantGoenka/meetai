@@ -2,7 +2,7 @@ import { inngest } from "./client";
 import { db } from "@/db";
 import { meetings } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { summarizeWithSarvam } from "@/lib/sarvam";
+import { summarizeWithSarvam } from "../sarvam";
 
 const MAX_TRANSCRIPT_CHARS = 15_000;
 

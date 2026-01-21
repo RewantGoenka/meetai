@@ -11,8 +11,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { meetingsGetOne } from "@/modules/meetings/types";
-import { meetingsInsertSchema, meetingsUpdateSchema } from "@/modules/meetings/schemas";
+import { meetingsGetOne } from "../../types";
+import { meetingsInsertSchema, meetingsUpdateSchema } from "../../schemas";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";

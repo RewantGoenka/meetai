@@ -1,12 +1,12 @@
 import Markdown from "react-markdown";
 import Link from "next/link";
-import { meetingsGetOne } from "@/modules/meetings/types";
+import { meetingsGetOne } from "../../types";
 import { BookOpenTextIcon, FileTextIcon, FileVideoIcon, SparklesIcon,ClockFadingIcon } from "lucide-react";
 import { ScrollArea,ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GeneratedAvatar } from "../../../../components/ui/generated-avatar";
+import { GeneratedAvatar } from "../../../../src/components/ui/generated-avatar";
 import { format } from "date-fns";
-import { Badge } from "../../../../components/ui/badge";
+import { Badge } from "../../../../src/components/ui/badge";
 import { formatDuration } from "@/lib/utils";
 
 interface Props {

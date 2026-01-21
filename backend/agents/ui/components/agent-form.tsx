@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { AgentGetOne } from "@/modules/agents/types";
-import { agentsInsertSchema } from "@/modules/agents/schemas";
+import { AgentGetOne } from "../../types";
+import { agentsInsertSchema } from "../../schemas";
 import { toast } from "sonner";
 import { GeneratedAvatar } from "@/components/ui/generated-avatar";
 import { useMutation, useQueryClient } from "@tanstack/react-query";

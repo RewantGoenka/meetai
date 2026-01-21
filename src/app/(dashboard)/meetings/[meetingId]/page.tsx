@@ -5,9 +5,9 @@ import { Suspense } from 'react';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { getQueryClient,trpc } from '@/trpc/server';
 import { ErrorBoundary } from 'react-error-boundary';
-import { MeetingIdView } from '@/modules/meetings/ui/views/meeting-id-view';
-import { MeetingIdViewLoading } from '@/modules/meetings/ui/views/meeting-id-view';
-import { MeetingIdViewError } from '@/modules/meetings/ui/views/meeting-id-view';
+import { MeetingIdView } from '../../../../../backend/meetings/ui/views/meeting-id-view';
+import { MeetingIdViewLoading } from '../../../../../backend/meetings/ui/views/meeting-id-view';
+import { MeetingIdViewError } from '../../../../../backend/meetings/ui/views/meeting-id-view';
 interface Props {
     params: Promise<{ 
         meetingId: string;

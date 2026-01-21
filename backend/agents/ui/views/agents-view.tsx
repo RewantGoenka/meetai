@@ -4,7 +4,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { LoadingState } from "@/components/loadingstate";
 import { DataTable } from "@/components/data-table";
-import { columns} from "@/modules/agents/ui/components/columns";
+import { columns} from "../components/columns";
 import { useRouter } from "next/navigation";
 export const AgentsView = () => {
   const router = useRouter();

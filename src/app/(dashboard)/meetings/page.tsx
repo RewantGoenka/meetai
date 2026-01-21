@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth';
-import { MeetingsListHeader } from '@/modules/meetings/ui/components/meetings-list-header';
-import { MeetingsView, MeetingsViewError, MeetingsViewLoading } from '@/modules/meetings/ui/views/meetings-view';
+import { MeetingsListHeader } from '../../../../backend/meetings/ui/components/meetings-list-header';
+import { MeetingsView, MeetingsViewError, MeetingsViewLoading } from '../../../../backend/meetings/ui/views/meetings-view';
 import { getQueryClient, trpc } from '@/trpc/server';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { headers } from 'next/headers';

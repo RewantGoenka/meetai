@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
     const transcriptionUrl = payload.transcription?.url;
     if (transcriptionUrl) {
       await db.update(meetings).set({ transcripturl: transcriptionUrl }).where(eq(meetings.id, meetingId));
-      const { inngest } = await import("@/inngest/client");
+      const { inngest } = await import("../inngest/client");
       await inngest.send({ name: "meeting/transcript.ready", data: { meetingId, transcriptUrl: transcriptionUrl } });
     }
   }

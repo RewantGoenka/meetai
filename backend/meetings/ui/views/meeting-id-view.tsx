@@ -8,7 +8,7 @@ import { MeetingIdViewHeader } from '../components/meeting-id-view-header';
 import { useRouter } from 'next/navigation';
 import { UpcomingState } from '../components/upcoming-state';
 import { ActiveState } from '../components/active-state';
-import { CompletedState } from '@/modules/meetings/ui/components/completed-state';
+import { CompletedState } from '../components/completed-state';
 
 interface Props {
     meetingId: string;

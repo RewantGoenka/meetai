@@ -1,10 +1,10 @@
 import { getQueryClient,trpc } from '@/trpc/server';
 import { HydrationBoundary,dehydrate } from '@tanstack/react-query';
 // Update the import path to the correct relative path
-import { AgentIdView, AgentIdViewLoading } from "@/modules/agents/ui/views/agent-id-view";
+import { AgentIdView, AgentIdViewLoading } from "../../../../../backend/agents/ui/views/agent-id-view";
 import { ErrorBoundary } from 'react-error-boundary';
 import { Suspense } from 'react';
-import { AgentIdViewError } from '@/modules/agents/ui/views/agent-id-view';
+import { AgentIdViewError } from '../../../../../backend/agents/ui/views/agent-id-view';
 interface Props {
     params:Promise<{ agentsId: string }>
 };
