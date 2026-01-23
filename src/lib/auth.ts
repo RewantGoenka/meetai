@@ -3,29 +3,27 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 
-// DEBUG LOGS: These will show up in your Vercel logs or Terminal
-console.log("--- Auth Environment Check ---");
-console.log("GITHUB_CLIENT_ID exists:", !!process.env.GITHUB_CLIENT_ID);
-console.log("GOOGLE_CLIENT_ID exists:", !!process.env.GOOGLE_CLIENT_ID);
-console.log("BETTER_AUTH_URL:", process.env.BETTER_AUTH_URL);
-console.log("------------------------------");
-
 export const auth = betterAuth({
-    // 1. ADD THIS: Explicitly trust the exact Vercel URL
-    // Better Auth 1.3.x+ requires this for strict origin validation
+    // 1. DYNAMIC BASE URL: 
+    // This allows Better Auth to infer the correct URL from the request, 
+    // fixing the mismatch between Vercel, Render, and Localhost ports.
+    baseURL: process.env.BETTER_AUTH_URL,
+
     trustedOrigins: [
         "https://meetai-zeta-ashen.vercel.app",
-        "http://localhost:3000"
+        "http://localhost:3000",
+        // Trust all ports on localhost for easier development
+        "http://localhost:*" 
     ],
 
     socialProviders: {
         google: { 
-            clientId: process.env.GOOGLE_CLIENT_ID as string, 
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string, 
+            clientId: process.env.GOOGLE_CLIENT_ID!, 
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!, 
         }, 
         github: {
-            clientId: process.env.GITHUB_CLIENT_ID as string,
-            clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+            clientId: process.env.GITHUB_CLIENT_ID!,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET!,
         }
     },
     
@@ -40,8 +38,12 @@ export const auth = betterAuth({
         },
     }),
 
-    // 2. ADD THIS: Helps with cross-origin cookie issues on .vercel.app
     advanced: {
+        // 2. TRUST PROXY HEADERS: 
+        // Essential for Render. It tells Better Auth to trust 'x-forwarded-host'
+        // which prevents the 307 redirect loop.
+        trustedProxyHeaders: true,
+        
         crossSubDomainCookies: {
             enabled: true,
         },
