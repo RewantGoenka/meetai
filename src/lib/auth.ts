@@ -10,11 +10,10 @@ export const auth = betterAuth({
     baseURL: process.env.BETTER_AUTH_URL,
 
     trustedOrigins: [
-        "https://meetai-zeta-ashen.vercel.app",
-        "http://localhost:3000",
-        // Trust all ports on localhost for easier development
-        "http://localhost:*" 
-    ],
+    "https://meetai-zeta-ashen.vercel.app",
+    "http://localhost:3000",
+    process.env.BETTER_AUTH_URL as string // Dynamically trust whatever is in your ENV
+].filter(Boolean),
 
     socialProviders: {
         google: { 
