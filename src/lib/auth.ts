@@ -12,6 +12,7 @@ export const auth = betterAuth({
     trustedOrigins: [
     "https://meetai-zeta-ashen.vercel.app",
     "http://localhost:3000",
+    "https://meetai-82zz.onrender.com",
     process.env.BETTER_AUTH_URL as string // Dynamically trust whatever is in your ENV
 ].filter(Boolean),
 
