@@ -56,45 +56,43 @@ export async function POST(req: NextRequest) {
         console.log(`🤖 Initializing agent join: ${callId}`);
         const call = client.video.call(callType, callId);
 
-        // Join the call and set the agent as an admin member in one go
-        await call.getOrCreate({
-          data: {
-            members: [{ user_id: agent.id, role: "admin" }],
-          },
-        });
+        // CRITICAL: Ensure agent exists as Stream user FIRST
+                // Stream Video client types may not expose 'user' on the root client,
+                // so cast to any to call the runtime method.
+                await (client as any).user(agent.id).getOrUpdate({
+                  name: `Agent ${agent.id}`,
+                  role: 'admin'
+                });
 
-        // 2-second buffer to ensure Stream session is ready for OpenAI
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        // Ensure call exists and is ready (no members needed for agent)
+        await call.getOrCreate();
+
+        // Short buffer for call readiness
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         console.log(`🤖 Attempting OpenAI Realtime Connection...`);
-        try {
-          const realtimeClient = await client.video.connectOpenAi({
-            call,
-            openAiApiKey: process.env.OPENAI_API_KEY!,
-            agentUserId: agent.id,
-          });
+        const realtimeClient = await client.video.connectOpenAi({
+          call,
+          openAiApiKey: process.env.OPENAI_API_KEY!,
+          agentUserId: agent.id,
+          model: "gpt-4o-realtime-preview" // Explicit model
+        });
 
-          await realtimeClient.updateSession({
-            instructions: agent.instructions,
-            turn_detection: { type: "server_vad", threshold: 0.5 },
-            input_audio_transcription: { model: "whisper-1" },
-            voice: "alloy",
-          });
+        await realtimeClient.updateSession({
+          instructions: agent.instructions,
+          turn_detection: { type: "server_vad", threshold: 0.5 },
+          input_audio_transcription: { model: "whisper-1" },
+          voice: "alloy",
+          modalities: ["text", "audio"] // Ensure both enabled
+        });
 
-          console.log(`✅ Agent successfully connected to ${callId}`);
-        } catch (openAiErr: any) {
-          // Log specific OpenAI failure details
-          const errorData = openAiErr.response?.data || openAiErr.message;
-          console.error("❌ OpenAI Connection Failed:", errorData);
-          return NextResponse.json({ 
-            error: "OpenAI connection failed", 
-            details: errorData 
-          }, { status: 500 });
-        }
-
+        console.log(`✅ Agent successfully connected to ${callId}`);
       } catch (error: any) {
-        console.error("❌ Stream Join Error:", error.message);
-        return NextResponse.json({ error: "Stream join failed", details: error.message }, { status: 500 });
+        console.error("❌ Agent Join Error:", error.message, error.response?.data);
+        return NextResponse.json({ 
+          error: "Agent connection failed", 
+          details: error.message 
+        }, { status: 500 });
       }
     }
   }
