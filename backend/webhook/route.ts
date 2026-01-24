@@ -39,38 +39,34 @@ export async function POST(req: NextRequest) {
 
   /* 2. CALL STARTED */
   if (eventType === "call.session_started") {
-    const [meeting] = await db
-      .update(meetings)
-      .set({ status: "active", startedAt: new Date() })
-      .where(and(eq(meetings.id, callId), eq(meetings.status, "upcoming")))
-      .returning();
+    // Fetch meeting without the status lock
+    const [meeting] = await db.select().from(meetings).where(eq(meetings.id, callId));
 
-    if (!meeting) return NextResponse.json({ status: "already_active" });
+    if (!meeting) return NextResponse.json({ error: "Meeting not found" }, { status: 404 });
+
+    // Update DB status (Non-blocking)
+    await db.update(meetings)
+      .set({ status: "active", startedAt: new Date() })
+      .where(eq(meetings.id, callId));
 
     const [agent] = await db.select().from(agents).where(eq(agents.id, meeting.agentid));
 
     if (agent?.instructions) {
       try {
-        console.log(`🚀 Attempting agent join for call: ${callId}`);
-
+        console.log(`🤖 Initializing agent join: ${callId}`);
         const call = client.video.call(callType, callId);
 
-        // Ensure the call exists and the agent is a member; include minimal member info (Stream's MemberRequest does not accept a nested 'user')
-                await call.getOrCreate({
-                  data: {
-                    members: [{
-                      user_id: agent.id,
-                      role: "admin",
-                    }],
-                    // If you need to ensure a user object exists with a name, create it separately:
-                    // users: [{ id: agent.id, name: agent.name ?? "AI Assistant" }],
-                  },
-                });
+        // Join the call and set the agent as an admin member in one go
+        await call.getOrCreate({
+          data: {
+            members: [{ user_id: agent.id, role: "admin" }],
+          },
+        });
 
-        // Small delay to allow Stream backend to sync the new participant session
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        // 2-second buffer to ensure Stream session is ready for OpenAI
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
-        // DETAILED TRY-CATCH FOR OPENAI CONNECTION
+        console.log(`🤖 Attempting OpenAI Realtime Connection...`);
         try {
           const realtimeClient = await client.video.connectOpenAi({
             call,
@@ -85,39 +81,40 @@ export async function POST(req: NextRequest) {
             voice: "alloy",
           });
 
-          console.log(`✅ OpenAI Agent connected successfully to ${callId}`);
+          console.log(`✅ Agent successfully connected to ${callId}`);
         } catch (openAiErr: any) {
-          console.error("❌ OpenAI Connection Block Error:", {
-            message: openAiErr.message,
-            stack: openAiErr.stack,
-            response: openAiErr.response?.data, // Capture API response if available
-          });
-          throw new Error(`OpenAI Connect Failed: ${openAiErr.message}`);
+          // Log specific OpenAI failure details
+          const errorData = openAiErr.response?.data || openAiErr.message;
+          console.error("❌ OpenAI Connection Failed:", errorData);
+          return NextResponse.json({ 
+            error: "OpenAI connection failed", 
+            details: errorData 
+          }, { status: 500 });
         }
 
       } catch (error: any) {
-        console.error("❌ Global Agent Join Failure:", error);
-        return NextResponse.json({ error: "Agent join failed", details: error.message }, { status: 500 });
+        console.error("❌ Stream Join Error:", error.message);
+        return NextResponse.json({ error: "Stream join failed", details: error.message }, { status: 500 });
       }
     }
   }
 
-  /* 3. PARTICIPANT LEFT (Clean up) */
+  /* 3. PARTICIPANT LEFT */
   else if (eventType === "call.session_participant_left") {
     const leftUserId = payload.participant?.user_id;
-    
-    const [meeting] = await db
-      .update(meetings)
-      .set({ status: "processing", endedAt: new Date() })
-      .where(and(eq(meetings.id, callId), eq(meetings.status, "active")))
-      .returning();
+    const [meeting] = await db.select().from(meetings).where(eq(meetings.id, callId));
 
     if (meeting && leftUserId !== meeting.agentid) {
+      await db.update(meetings)
+        .set({ status: "processing", endedAt: new Date() })
+        .where(eq(meetings.id, callId));
+      
       try {
         const call = client.video.call(callType, callId);
         await call.end();
+        console.log(`👋 Call ended by agent cleanup: ${callId}`);
       } catch (e) {
-        console.error("Error ending call:", e);
+        console.error("Cleanup error:", e);
       }
     }
   }
