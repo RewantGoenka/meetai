@@ -23,14 +23,12 @@ export async function POST(req: NextRequest) {
   }
 
   const { type: eventType, id: eventId } = payload;
-  
-  // 1. IMPROVED ID EXTRACTION: Get both Type and ID
   const callId = payload.call?.id || payload.call_cid?.split(":")[1];
   const callType = payload.call?.type || payload.call_cid?.split(":")[0] || "default";
 
-  if (!callId) return NextResponse.json({ error: "No callId found" }, { status: 400 });
+  if (!callId) return NextResponse.json({ error: "No callId" }, { status: 400 });
 
-  /* IDEMPOTENCY */
+  /* 1. IDEMPOTENCY */
   if (eventId) {
     try {
       await db.insert(webhookEvents).values({ id: eventId, type: eventType });
@@ -39,62 +37,72 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  /* CALL STARTED */
+  /* 2. CALL STARTED */
   if (eventType === "call.session_started") {
     const [meeting] = await db
       .update(meetings)
       .set({ status: "active", startedAt: new Date() })
-      .where(
-        and(
-          eq(meetings.id, callId),
-          eq(meetings.status, "upcoming")
-        )
-      )
+      .where(and(eq(meetings.id, callId), eq(meetings.status, "upcoming")))
       .returning();
 
-    if (!meeting) {
-      return NextResponse.json({ status: "already_active_or_not_found" });
-    }
+    if (!meeting) return NextResponse.json({ status: "already_active" });
 
     const [agent] = await db.select().from(agents).where(eq(agents.id, meeting.agentid));
 
     if (agent?.instructions) {
       try {
-        // Use the actual type and ID from the webhook
+        console.log(`🚀 Attempting agent join for call: ${callId}`);
+
         const call = client.video.call(callType, callId);
 
-        // Ensure call exists and agent has permissions
-        await call.getOrCreate({
-          data: {
-            members: [{ user_id: agent.id, role: "admin" }], // Admin role ensures join rights
-          },
-        });
+        // Ensure the call exists and the agent is a member; include minimal member info (Stream's MemberRequest does not accept a nested 'user')
+                await call.getOrCreate({
+                  data: {
+                    members: [{
+                      user_id: agent.id,
+                      role: "admin",
+                    }],
+                    // If you need to ensure a user object exists with a name, create it separately:
+                    // users: [{ id: agent.id, name: agent.name ?? "AI Assistant" }],
+                  },
+                });
 
-        // Small delay to ensure Stream's infrastructure is ready for the RTC connection
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Small delay to allow Stream backend to sync the new participant session
+        await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        const realtimeClient = await client.video.connectOpenAi({
-          call,
-          openAiApiKey: process.env.OPENAI_API_KEY!,
-          agentUserId: agent.id,
-        });
+        // DETAILED TRY-CATCH FOR OPENAI CONNECTION
+        try {
+          const realtimeClient = await client.video.connectOpenAi({
+            call,
+            openAiApiKey: process.env.OPENAI_API_KEY!,
+            agentUserId: agent.id,
+          });
 
-        await realtimeClient.updateSession({
-          instructions: agent.instructions,
-          turn_detection: { type: "server_vad", threshold: 0.5 },
-          input_audio_transcription: { model: "whisper-1" },
-          voice: "alloy",
-        });
+          await realtimeClient.updateSession({
+            instructions: agent.instructions,
+            turn_detection: { type: "server_vad", threshold: 0.5 },
+            input_audio_transcription: { model: "whisper-1" },
+            voice: "alloy",
+          });
 
-        console.log(`✅ Agent Joined Call: ${callType}:${callId}`);
+          console.log(`✅ OpenAI Agent connected successfully to ${callId}`);
+        } catch (openAiErr: any) {
+          console.error("❌ OpenAI Connection Block Error:", {
+            message: openAiErr.message,
+            stack: openAiErr.stack,
+            response: openAiErr.response?.data, // Capture API response if available
+          });
+          throw new Error(`OpenAI Connect Failed: ${openAiErr.message}`);
+        }
+
       } catch (error: any) {
-        console.error("❌ Agent Join Error:", error);
+        console.error("❌ Global Agent Join Failure:", error);
         return NextResponse.json({ error: "Agent join failed", details: error.message }, { status: 500 });
       }
     }
   }
 
-  /* PARTICIPANT LEFT */
+  /* 3. PARTICIPANT LEFT (Clean up) */
   else if (eventType === "call.session_participant_left") {
     const leftUserId = payload.participant?.user_id;
     
@@ -104,24 +112,13 @@ export async function POST(req: NextRequest) {
       .where(and(eq(meetings.id, callId), eq(meetings.status, "active")))
       .returning();
 
-    // If a human left and the meeting is now "processing", end the call for the agent
     if (meeting && leftUserId !== meeting.agentid) {
       try {
         const call = client.video.call(callType, callId);
         await call.end();
       } catch (e) {
-        console.error("End call error:", e);
+        console.error("Error ending call:", e);
       }
-    }
-  }
-
-  /* TRANSCRIPTION READY */
-  else if (eventType === "call.transcription_ready") {
-    const transcriptionUrl = payload.transcription?.url;
-    if (transcriptionUrl) {
-      await db.update(meetings).set({ transcripturl: transcriptionUrl }).where(eq(meetings.id, callId));
-      const { inngest } = await import("../inngest/client");
-      await inngest.send({ name: "meeting/transcript.ready", data: { meetingId: callId, transcriptUrl: transcriptionUrl } });
     }
   }
 
