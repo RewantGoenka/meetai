@@ -4,6 +4,7 @@
 **Build Voice-AI Agents and run Meetings powered by them — faster than ever.**
 
 MeetAI is an AI-powered meeting platform designed to handle **real-time conversations, event-driven workflows, and production-grade reliability**. This project demonstrates full-stack engineering at scale, with a focus on **system design, idempotency, and data integrity**.
+Live agent participation is implemented and demonstrated; further iterations were intentionally paused in favor of building a generalized agentic workflow engine.
 
 ---
 
