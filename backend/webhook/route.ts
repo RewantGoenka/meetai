@@ -16,7 +16,11 @@ export async function POST(req: NextRequest) {
   if (!isValid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let payload: any;
-  try { payload = JSON.parse(body); } catch { return NextResponse.json({ error: "Bad JSON" }, { status: 400 }); }
+  try { 
+    payload = JSON.parse(body); 
+  } catch { 
+    return NextResponse.json({ error: "Bad JSON" }, { status: 400 }); 
+  }
 
   const { type: eventType, id: eventId } = payload;
   const rawId = payload.call?.id || payload.call_cid || payload.call?.custom?.meetingId;
@@ -34,8 +38,6 @@ export async function POST(req: NextRequest) {
   }
 
   /* 2. CALL STARTED - THE ONLY GATE FOR AGENT JOIN */
-  // We ONLY allow the agent to join on 'call.session_started'.
-  // If we don't check this, other events like 'participant_joined' might trigger it too.
   if (eventType === "call.session_started") {
     
     // ATOMIC LOCK: This is the ONLY request that will get a result from .returning()
@@ -62,10 +64,19 @@ export async function POST(req: NextRequest) {
         console.log(`🤖 SINGLE AGENT joining: ${meetingId}`);
         const call = client.video.call("default", meetingId);
 
+        // FIXED: Ensure call is created/joined with agent as member before connecting OpenAI
+        await call.getOrCreate({
+          data: {
+            members: [
+              { user_id: agent.id, role: "agent" }, // Grant agent join permissions
+            ],
+          },
+        });
+
         const realtimeClient = await client.video.connectOpenAi({
           call,
           openAiApiKey: process.env.OPENAI_API_KEY!,
-          agentUserId: agent.id, // Ensure this is unique to the agent
+          agentUserId: agent.id, // Unique per agent
         });
 
         await realtimeClient.updateSession({
@@ -74,8 +85,13 @@ export async function POST(req: NextRequest) {
           input_audio_transcription: { model: "whisper-1" },
           voice: "alloy", 
         });
-      } catch (error) {
+
+        console.log(`✅ Agent successfully joined: ${meetingId}`);
+      } catch (error: unknown) {
         console.error("❌ Agent Join Error:", error);
+        // FIXED: Don't hide errors - return failure for debugging
+        const details = error instanceof Error ? error.message : String(error);
+        return NextResponse.json({ error: "Agent join failed", details }, { status: 500 });
       }
     }
   }
@@ -95,7 +111,9 @@ export async function POST(req: NextRequest) {
       try {
         const call = client.video.call("default", meetingId);
         await call.end();
-      } catch (e) {}
+      } catch (e) {
+        console.error("End call error:", e);
+      }
     }
   }
 
@@ -110,4 +128,4 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ status: "ok" });
-} 
+}
