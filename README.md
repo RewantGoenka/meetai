@@ -1,5 +1,5 @@
 ````markdown
-# MeetAI
+# MeetAIlol
 
 **Build Voice-AI Agents and run Meetings powered by them — faster than ever.**
 
